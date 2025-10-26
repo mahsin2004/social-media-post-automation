@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 188 30% 41%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 125 29% 51%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 188 30% 41%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* ChatGPT-style dark theme colors in HSL */
+    --background: 230 10% 12%; /* A very dark, slightly bluish gray */
+    --foreground: 220 20% 95%; /* A soft, off-white for text */
+    --card: 230 10% 18%; /* Darker than background for card surfaces */
+    --card-foreground: 220 20% 95%;
+    --popover: 230 10% 12%;
+    --popover-foreground: 220 20% 95%;
+    --primary: 220 20% 95%; /* Text color can be used for primary elements */
+    --primary-foreground: 230 10% 12%; /* The main dark background color */
+    --secondary: 230 10% 22%; /* A slightly lighter dark gray for secondary elements */
+    --secondary-foreground: 220 20% 95%;
+    --muted: 230 10% 25%; /* Slightly lighter still for muted content */
+    --muted-foreground: 220 10% 65%; /* Muted gray for text */
+    --accent: 164 24% 56%; /* The distinct ChatGPT green (#74aa9c) converted to HSL */
+    --accent-foreground: 230 10% 12%;
+    --destructive: 0 65% 55%; /* A reddish color for destructive actions */
+    --destructive-foreground: 0 0% 98%;
+    --border: 230 10% 25%;
+    --input: 230 10% 22%;
+    --ring: 164 24% 56%;
+    /* Keep chart colors as they are for distinction */
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --radius: 0.5rem;
+    --sidebar-background: 230 10% 15%; /* A slightly lighter shade for the sidebar */
+    --sidebar-foreground: 220 20% 95%;
+    --sidebar-primary: 164 24% 56%; /* The accent green for primary sidebar elements */
+    --sidebar-primary-foreground: 230 10% 12%;
+    --sidebar-accent: 230 10% 22%;
+    --sidebar-accent-foreground: 220 20% 95%;
+    --sidebar-border: 230 10% 25%;
+    --sidebar-ring: 164 24% 56%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 dark:from-slate-900 dark:via-purple-900 dark:to-slate-900 text-foreground;
+    animation: gradientShift 15s ease infinite;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+  }
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
+  }
+  .smooth-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
