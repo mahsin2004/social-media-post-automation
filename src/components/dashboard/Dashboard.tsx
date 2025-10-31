@@ -572,12 +572,12 @@ export default function Dashboard() {
                         : "border-gray-200 bg-white hover:border-pink-300 hover:shadow-md"
                     }`}
                   >
-                    <div className="text-5xl mb-4">🔥</div>
+                    <div className="text-5xl mb-4">🤖</div>
                     <h4 className="text-xl font-bold text-gray-800 mb-2">
-                      Trending
+                      AI
                     </h4>
                     <p className="text-gray-600">
-                      Generate content based on trending topics and categories
+                      Generate content for you post using ai
                     </p>
                     {contentType === "trending" && (
                       <div className="absolute top-4 right-4 w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center">
