@@ -11,6 +11,7 @@ const postSchema = new mongoose.Schema({
   platform: {type: String},
   imagePrompt: { type: String },
   imageUrl:  { type: String },
+  vedioUrl:  { type: String },
   status:    { type: String, enum: ['draft','scheduled','published'], default: 'draft' },
   scheduledAt:{ type: Date },
 }, { timestamps: true });

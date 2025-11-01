@@ -12,62 +12,36 @@ const generateContent = asyncHandler(async (req, res) => {
   }
 
   const prompt = `
-You are an AI content generator for a product called 1ClikPost.
+You are an Expert Content Creator.
 
 Your task:
-Create engaging, platform-tailored social media post content for the following platforms:
-- LinkedIn
-- Twitter
-- Instagram
-- Facebook
+Create engaging, platform-tailored social media post content for the independent platforms:
+- title
+- body
+- hashtags
+- an image prompt for ai model
 
-For each platform:
+For single social platform:
 1. Generate text content appropriate to the platform’s style.
-2. Include an image prompt that visually represents the post — this image prompt will be used with the FLUX.1-schnell model.
+2. Include an image prompt that visually represents the post — this image prompt will be used with the Ai model.
 
 Input Topic: ${topicText}
 
 Return a valid JSON array like this:
 [
   {
-    "platform": "LinkedIn",
-    "title": "string | null",
-    "description": "string | null",
-    "body": "string",
-    "hashtags": ["#hashtag1", "#hashtag2"],
-    "imagePrompt": "Detailed prompt for FLUX.1-schnell (describe the visual concept, style, and subject clearly)"
-  },
-  {
-    "platform": "Twitter",
-    "body": "string",
-    "hashtags": ["#hashtag1", "#hashtag2"],
-    "imagePrompt": "Prompt for a compact, eye-catching image suited for Twitter"
-  },
-  {
-    "platform": "Instagram",
-    "caption": "string",
-    "hashtags": ["#hashtag1", "#hashtag2"],
-    "imagePrompt": "Prompt for an aesthetic, creative image suitable for Instagram"
-  },
-  {
     "platform": "Facebook",
     "title": "string | null",
     "body": "string",
     "hashtags": ["#hashtag1", "#hashtag2"],
-    "imagePrompt": "Prompt for a friendly, casual image suited for Facebook"
+    "imagePrompt": "Detailed prompt for Ai (describe the visual concept, style, and subject clearly)"
   }
 ]
 
 Guidelines:
-- LinkedIn → Professional, informative, value-driven.
-- Twitter → Short, clever, conversational.
-- Instagram → Fun, emotional, or aesthetic.
-- Facebook → Casual and community-oriented.
-- Hashtags should be relevant to the topic.
 - The image prompt should describe what the image should visually depict, including emotion, color tone, and composition.
 
-
-Only return the JSON array above. Do NOT include any extra commentary.
+Only return the JSON array above(arry and only one object). Do NOT include any extra commentary.
 `.trim();
 
   try {

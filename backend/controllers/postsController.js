@@ -16,9 +16,9 @@ export const createPost = async (req, res, next) => {
 
 export const listPosts = async (req, res, next) => {
   try {
-    console.log("User ID from token:", req.user._id);
+    // console.log("User ID from token:", req.user._id);
     const posts = await Post.find({ userId: req.user._id });
-    console.log("Fetched posts:", posts);
+    // console.log("Fetched posts:", posts);
     res.json(posts);
   } catch (err) {
     next(err);

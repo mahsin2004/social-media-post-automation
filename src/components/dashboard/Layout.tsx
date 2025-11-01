@@ -1,3 +1,4 @@
+'use client';
 // components/Layout.tsx
 import React, { PropsWithChildren, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
@@ -32,14 +33,14 @@ export default function Layout({ children }: PropsWithChildren) {
   const menuItems = [
     {
       id: "analytics",
-      path: "/analytics",
+      path: "/dashboard/analytics",
       icon: TrendingUp,
       label: "Analytics",
       color: "from-purple-400 to-purple-500",
     },
     {
       id: "calendar",
-      path: "/calendar",
+      path: "/dashboard/calendar",
       icon: Calendar,
       label: "Calendar",
       color: "from-purple-400 to-purple-500",
@@ -53,7 +54,7 @@ export default function Layout({ children }: PropsWithChildren) {
     },
     {
       id: "messages",
-      path: "/messages",
+      path: "/dashboard/messages",
       icon: MessageSquare,
       label: "Messages",
       color: "from-purple-400 to-purple-500",
@@ -63,14 +64,14 @@ export default function Layout({ children }: PropsWithChildren) {
   const bottomItems = [
     {
       id: "settings",
-      path: "dashboard/settings",
+      path: "/dashboard/settings",
       icon: Settings,
       label: "Settings",
       color: "from-purple-400 to-purple-500",
     },
     {
       id: "help",
-      path: "/help",
+      path: "/dashboard/help",
       icon: HelpCircle,
       label: "Help",
       color: "from-purple-400 to-purple-500",
@@ -82,7 +83,7 @@ export default function Layout({ children }: PropsWithChildren) {
     if (!pathname) return;
     // find the first menu or bottom item whose path is a prefix of the pathname
     const found = [...menuItems, ...bottomItems].find((it) =>
-      it.path === "/" ? pathname === "/" : pathname.startsWith(it.path)
+      it.path === pathname 
     );
     setActiveItem(found?.id ?? "");
   }, [pathname]);
@@ -110,16 +111,14 @@ export default function Layout({ children }: PropsWithChildren) {
                   <span
                     className={`group relative w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 ${
                       isActive
-                        ? `bg-gradient-to-br ${item.color} shadow-lg scale-110`
+                        ? "bg-gradient-to-br from-pink-100 to-purple-100 shadow"
                         : "bg-gray-100 hover:bg-gray-200"
                     }`}
                     title={item.label}
                   >
                     <Icon
                       className={`w-6 h-6 ${
-                        isActive
-                          ? "text-white"
-                          : "text-gray-600 group-hover:text-gray-800"
+                        isActive ? "text-purple-600" : "text-gray-600"
                       }`}
                     />
                   </span>
@@ -180,7 +179,7 @@ export default function Layout({ children }: PropsWithChildren) {
 
               {/* Workspace Selector */}
               <div className="hidden md:flex items-center space-x-2 px-3 py-1  rounded-lg border border-gray-200/50 cursor-pointer hover:shadow-md transition-all group">
-                <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-800 rounded-lg flex items-center justify-center text-white text-sm font-semibold shadow-sm">
+                <div className="w-8 h-8 text-purple-600 bg-gradient-to-br from-pink-100 to-purple-100 rounded-md flex items-center justify-center text-sm font-semibold shadow-sm">
                   T
                 </div>
                 <div>
@@ -208,11 +207,10 @@ export default function Layout({ children }: PropsWithChildren) {
             {/* Right Section */}
             <div className="flex items-center space-x-2 lg:space-x-3">
               {/* Upgrade Button */}
-              <button className="hidden sm:flex items-center space-x-2 px-4 py-2  bg-gradient-to-br from-pink-400 to-purple-500 text-white font-semibold rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 text-sm">
+              <Link  href={'/dashboard/settings'} className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-gradient-to-br from-pink-100 to-purple-100 text-purple-500 font-semibold rounded-md transition-all duration-200 text-sm">
                 <Sparkles className="w-4 h-4" />
-                <span className="hidden md:inline">Upgrade Now</span>
-                <span className="md:hidden">Upgrade</span>
-              </button>
+                <span className="hidden md:inline">Connect Social Media</span>
+              </Link>
 
               {/* Action Buttons */}
               <button className="hidden sm:block p-2.5 rounded-xl hover:bg-gray-100 transition-colors">
@@ -225,7 +223,7 @@ export default function Layout({ children }: PropsWithChildren) {
               </button>
 
               {/* Profile */}
-              <div className="w-10 h-10  bg-gradient-to-br from-pink-400 to-purple-500 rounded-xl flex items-center justify-center text-white font-semibold cursor-pointer hover:shadow-lg transition-all hover:scale-105">
+              <div onClick={() => logout()} className="w-10 h-10  bg-gradient-to-br from-pink-400 to-purple-500 rounded-xl flex items-center justify-center text-white font-semibold cursor-pointer hover:shadow-lg transition-all hover:scale-105">
                 M
               </div>
             </div>

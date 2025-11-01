@@ -5,117 +5,21 @@ import { useRouter } from "next/navigation";
 import Layout from "./Layout";
 import PlatformCard from "./PlatformCard";
 import GeneratedPostModal from "./GeneratedPostModal";
-import { Sparkles } from "lucide-react";
+import { Edit, Sparkles } from "lucide-react";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthToken } from "@/lib/cookies";
 import { useAuth } from "@/contexts/auth-context";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { deletePost, fetchPosts } from "@/store/features/posts/postsSlice";
+import { set } from "date-fns";
 
 export default function Dashboard() {
   const dispatch = useAppDispatch();
   const { posts, isLoading, error } = useAppSelector((state) => state.posts);
-  // console.log("Post list:", posts);
   const { toast } = useToast();
   const { user } = useAuth();
   const router = useRouter();
-  const [connectedPlatforms, setConnectedPlatforms] = useState([]);
-  const [onlyPlatforms, setOnlyPlatforms] = useState<string[]>([]);
-
-  useEffect(() => {
-    dispatch(fetchPosts());
-    const fetchConnectedPlatforms = async () => {
-      const token = getAuthToken();
-      // console.log('base url--->', process.env.NEXT_PUBLIC_BACKEND_URL)
-      try {
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/connect/connected-platforms`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        setConnectedPlatforms(response.data);
-        setOnlyPlatforms(
-          response.data.map((acc: { platform: string }) => acc.platform)
-        );
-      } catch (error) {
-        console.error("Error fetching connected platforms:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch connected platforms.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    fetchConnectedPlatforms();
-
-    // Check for connection status in URL
-    const params = new URLSearchParams(window.location.search);
-    const status = params.get("status");
-    const platform = params.get("platform");
-
-    if (status === "success" && platform) {
-      toast({
-        title: "Success",
-        description: `${platform} connected successfully!`,
-      });
-      // Optionally, refresh connected platforms to show the newly connected one
-      fetchConnectedPlatforms();
-      // Clear query parameters
-      router.replace({
-        pathname: router.pathname,
-        query: {},
-      });
-    }
-  }, []);
-
-  const handleConnectPlatform = async (platform: string) => {
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        toast({
-          title: "Error",
-          description: "Authentication token not found. Please log in again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/connect/${platform}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const { authUrl } = response.data;
-      window.location.href = authUrl;
-    } catch (error) {
-      console.error(`Error connecting ${platform}:`, error);
-      toast({
-        title: "Error",
-        description: `Failed to connect ${platform}. Please try again.`,
-        variant: "destructive",
-      });
-    }
-  };
-  const platformStats = [
-    { name: "Facebook", icon: "📘", total: 120, info: "Active this week" },
-    { name: "Twitter", icon: "🐦", total: 80, info: "Scheduled posts: 5" },
-    { name: "Instagram", icon: "📸", total: 60, info: "Image heavy posts" },
-    { name: "LinkedIn", icon: "👔", total: 45, info: "Professional reach" },
-    // { name: "Youtube", icon: "▶️", total: 30, info: "Video content" },
-    // { name: "Pinterest", icon: "📌", total: 25, info: "Visual discovery" },
-    // { name: "TikTok", icon: "🎵", total: 50, info: "Short videos" },
-    // add as needed
-  ];
 
   const [selectedPost, setSelectedPost] = useState<any | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -137,29 +41,22 @@ export default function Dashboard() {
   ];
 
   const ContentTone = [
-    // 🎯 Core Tones
     { id: "casual", label: "Casual", icon: "💬" },
     { id: "professional", label: "Professional", icon: "💼" },
     { id: "marketing", label: "Marketing", icon: "📢" },
     { id: "inspirational", label: "Inspirational", icon: "🌟" },
     { id: "informative", label: "Informative", icon: "📚" },
     { id: "creative", label: "Creative", icon: "🎨" },
-
-    // 💬 Social Media Friendly
     { id: "funny", label: "Funny", icon: "😂" },
     { id: "trendy", label: "Trendy", icon: "🔥" },
     { id: "storytelling", label: "Storytelling", icon: "📖" },
     { id: "conversational", label: "Conversational", icon: "🗣️" },
     { id: "emotional", label: "Emotional", icon: "❤️" },
-
-    // 💼 Business & Brand-Oriented
     { id: "corporate", label: "Corporate", icon: "🏢" },
     { id: "authoritative", label: "Authoritative", icon: "🧠" },
     { id: "persuasive", label: "Persuasive", icon: "🎯" },
     { id: "analytical", label: "Analytical", icon: "📊" },
     { id: "thought_leadership", label: "Thought Leadership", icon: "💡" },
-
-    // 🌈 Creative & Niche Styles
     { id: "minimalist", label: "Minimalist", icon: "⚪" },
     { id: "luxury", label: "Luxury", icon: "💎" },
     { id: "friendly", label: "Friendly", icon: "🤝" },
@@ -175,44 +72,55 @@ export default function Dashboard() {
   const [contentType, setContentType] = useState<"trending" | "custom" | null>(
     null
   );
+  const [coustomPostTitle, setCoustomPostTitle] = useState("");
+  const [coustomPostHashtags, setCoustomPostHashtags] = useState("");
   const [inptTopic, setInputTopic] = useState("");
+  const [aiTopicText, setAiTopicText] = useState("");
   const [category, setCategory] = useState("");
-  // Update the state to allow multiple selections
+  const [contentTone, setContentTone] = useState("");
   const [mediaType, setMediaType] = useState<("image" | "text")[]>([]);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
 
   const handleReset = () => {
     setStep(1);
     setContentType(null);
     setCategory("");
+    setContentTone("");
+    setAiTopicText("");
     setMediaType([]);
     setInputTopic("");
+    setCoustomPostTitle("");
+    setCoustomPostHashtags("");
+    setImagePreview(null);
+    setVideoPreview(null);
   };
 
-  // Update the handleNext function
   const handleNext = () => {
     if (step === 1) {
       setStep(2);
     } else if (step === 2) {
       setStep(3);
-    } else if (step === 3 && mediaType.length > 0) {
-      setStep(4);
-    } else {
-      setStep(5);
     }
   };
 
-  // Update the canProceed function
   const canProceed = () => {
     if (step === 1) return contentType !== null;
-    if (step === 2)
-      return (
-        category !== "" || (contentType === "custom" && inptTopic.trim() !== "")
-      );
-    if (step === 3) return mediaType.length > 0;
+    if (step === 2) {
+      const hasTopicOrCategory =
+        contentType === "custom" ? inptTopic.trim() !== "" : category !== "";
+      const hasMediaType = mediaType.length > 0;
+      const hasTone = contentTone !== "";
+      const hasAiTopicText = aiTopicText.trim() !== "";
+      if (contentType === "custom") {
+        return hasTopicOrCategory;
+      } else {
+        return hasMediaType && hasTone && hasAiTopicText;
+      }
+    }
     return true;
   };
 
-  // Update the media type toggle handler
   const toggleMediaType = (type: "image" | "text") => {
     setMediaType((prev) =>
       prev.includes(type) ? prev.filter((m) => m !== type) : [...prev, type]
@@ -222,16 +130,7 @@ export default function Dashboard() {
   const handleGenerate = async () => {
     try {
       let topicText = "";
-
-      if (contentType === "custom") {
-        topicText = inptTopic.trim();
-      } else if (contentType === "trending") {
-        // Placeholder for trending topic based on category
-        topicText = `Trending topic in ${category} category`;
-      }
-
       const includeImage = mediaType.includes("image");
-
       const token = getAuthToken();
       if (!user || !token) {
         toast({
@@ -242,74 +141,70 @@ export default function Dashboard() {
         return;
       }
 
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/content/generator`,
-        {
-          topicText,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
+      if (contentType === "custom") {
+        topicText = inptTopic.trim();
+        const customoDataPost = [
+          {
+            title: coustomPostTitle.trim(),
+            body: inptTopic.trim(),
+            hashtags: coustomPostHashtags
+              .split(",")
+              .map((tag) => tag.trim())
+              .filter((tag) => tag !== ""),
+
+            imageUrl: imagePreview,
+            videoUrl: videoPreview,
+            platform: "Facebook",
+            caption: null,
+            description: null,
           },
-        }
-      );
+          {
+            title: coustomPostTitle.trim(),
+            body: inptTopic.trim(),
+            hashtags: coustomPostHashtags
+              .split(",")
+              .map((tag) => tag.trim())
+              .filter((tag) => tag !== ""),
 
-      type GeneratedTextContentItem = {
-        platform?: string | null;
-        title?: string | null;
-        caption?: string | null;
-        description?: string | null;
-        body?: string | null;
-        hashtags?: string[] | null;
-        imagePrompt: string | null;
-        imageUrl?: string | null;
-        [key: string]: any;
-      };
+            imageUrl: imagePreview,
+            videoUrl: videoPreview,
+            platform: "Instagram",
+            caption: null,
+            description: null,
+          },
+          {
+            title: coustomPostTitle.trim(),
+            body: inptTopic.trim(),
+            hashtags: coustomPostHashtags
+              .split(",")
+              .map((tag) => tag.trim())
+              .filter((tag) => tag !== ""),
 
-      const generatedTextContent: GeneratedTextContentItem[] = response.data;
-      const requiredKeys: Required<GeneratedTextContentItem> = {
-        platform: null,
-        title: null,
-        caption: null,
-        description: null,
-        body: null,
-        hashtags: [],
-        imagePrompt: null,
-        imageUrl: null,
-      };
+            imageUrl: imagePreview,
+            videoUrl: videoPreview,
+            platform: "Twitter",
+            caption: null,
+            description: null,
+          },
+          {
+            title: coustomPostTitle.trim(),
+            body: inptTopic.trim(),
+            hashtags: coustomPostHashtags
+              .split(",")
+              .map((tag) => tag.trim())
+              .filter((tag) => tag !== ""),
 
-      // Normalize every object in the array
-      let normalizedContent = generatedTextContent.map(
-        (item: GeneratedTextContentItem) => {
-          const normalizedItem: Required<GeneratedTextContentItem> & {
-            [key: string]: any;
-          } = { ...requiredKeys, ...item }; // fills missing keys
-          // Optional: ensure hashtags is always an array
-          if (!Array.isArray(normalizedItem.hashtags)) {
-            normalizedItem.hashtags = [];
-          }
-          return normalizedItem;
-        }
-      );
+            imageUrl: imagePreview,
+            videoUrl: videoPreview,
+            platform: "LinkedIn",
+            caption: null,
+            description: null,
+          },
+        ];
 
-      // console.log("Normalized Content:", normalizedContent);
-
-      if (includeImage) {
-        // If user selected "image", generate image prompts separately
-        let generatedImagePrompts: Array<{
-          prompt: string;
-        }> = [];
-        if (includeImage) {
-          generatedImagePrompts = generatedTextContent.map((item: any) => ({
-            prompt: `Generate an image based on: ${item.imagePrompt}. Generated image will be posted on ${item.platform}.`, // simple placeholder
-          }));
-        }
-
-        // console.log(generatedImagePrompts);
-
-        const resImage = await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/image/generator`,
-          generatedImagePrompts,
+        const resPost = await axios.post(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts`,
+          { posts: customoDataPost },
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -317,50 +212,139 @@ export default function Dashboard() {
           }
         );
 
-        console.log("images", resImage.data);
+        // console.log("post created", resPost.data);
 
-        // ✅ Assign the result to normalizedContent
-        normalizedContent = normalizedContent.map((obj, index) => ({
-          ...obj,
-          imageUrl: resImage?.data[index]?.image || null,
-        }));
-      }
+        if (resPost.status === 201) {
+          dispatch(fetchPosts());
+          handleReset();
+          setStep(4);
 
-      // create posts with normalizedContent array objects
-      const resPost = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts`,
-        { posts: normalizedContent },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          toast({
+            title: "Success",
+            description: "Content generated successfully!",
+          });
         }
-      );
-
-      console.log("post created", resPost.data);
-
-      if (resPost.status === 201) {
-        dispatch(fetchPosts());
-        setStep(1);
-        setContentType(null);
-        setCategory("");
-        setMediaType([]);
-        setInputTopic("");
 
         toast({
           title: "Success",
-          description: "Content generated successfully!",
+          description: "Custom Content generated successfully!",
         });
-      }
+      } else if (contentType === "trending") {
+        topicText = `${aiTopicText} in ${category} category. The content should have the following tone: ${contentTone}.`;
 
-      // setGeneratedContent(finalContent);
+        const response = await axios.post(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/content/generator`,
+          {
+            topicText,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        type GeneratedTextContentItem = {
+          platform?: string | null;
+          title?: string | null;
+          caption?: string | null;
+          description?: string | null;
+          body?: string | null;
+          hashtags?: string[] | null;
+          imagePrompt: string | null;
+          imageUrl?: string | null;
+          [key: string]: any;
+        };
+
+        const generatedTextContent: GeneratedTextContentItem[] = response.data;
+        const requiredKeys: Required<GeneratedTextContentItem> = {
+          platform: null,
+          title: null,
+          caption: null,
+          description: null,
+          body: null,
+          hashtags: [],
+          imagePrompt: null,
+          imageUrl: null,
+        };
+
+        let normalizedContent = generatedTextContent.map(
+          (item: GeneratedTextContentItem) => {
+            const normalizedItem: Required<GeneratedTextContentItem> & {
+              [key: string]: any;
+            } = { ...requiredKeys, ...item };
+            if (!Array.isArray(normalizedItem.hashtags)) {
+              normalizedItem.hashtags = [];
+            }
+            return normalizedItem;
+          }
+        );
+
+        // generate multiple objects duplicationg the normalizedContent array of one object which is 'Facebook' to other platforms objects like 'Instagram', 'Twitter', 'LinkedIn' etc.
+        // Platforms to duplicate for
+        const platforms = ["Facebook", "Instagram", "Twitter", "LinkedIn"];
+
+        // Keep a copy of the original content before duplication
+        const baseContent = [...normalizedContent];
+
+        // Duplicate the single-object array (Facebook) for all platforms
+        normalizedContent = platforms.flatMap((platform) =>
+          baseContent.map((item) => ({
+            ...item,
+            platform,
+          }))
+        );
+
+        if (includeImage) {
+          let generatedImagePrompts: Array<{ prompt: string }> = [];
+          generatedImagePrompts = normalizedContent.map((item: any) => ({
+            prompt: `Generate an image based on: ${item.imagePrompt}. Generated image will be posted on ${item.platform}.`,
+          }));
+
+          const resImage = await axios.post(
+            `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/image/generator`,
+            generatedImagePrompts,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          console.log("images", resImage.data);
+
+          normalizedContent = normalizedContent.map((obj, index) => ({
+            ...obj,
+            imageUrl: resImage?.data[index]?.image || null,
+          }));
+        }
+
+        const resPost = await axios.post(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts`,
+          { posts: normalizedContent },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        // console.log("post created", resPost.data);
+
+        if (resPost.status === 201) {
+          dispatch(fetchPosts());
+          handleReset();
+          setStep(4);
+
+          toast({
+            title: "Success",
+            description: "Content generated successfully!",
+          });
+        }
+      }
     } catch (error) {
       console.error("Error generating content:", error);
-      setStep(1);
-      setContentType(null);
-      setCategory("");
-      setMediaType([]);
-      setInputTopic("");
+      handleReset();
       toast({
         title: "Error",
         description: "Failed to generate content.",
@@ -381,14 +365,9 @@ export default function Dashboard() {
       return;
     }
 
-    const updatedPostData = {
-      _id: post._id,
-    };
-
     dispatch(deletePost({ postId: post._id, token }))
       .unwrap()
       .then(() => {
-        // onClose();
         dispatch(fetchPosts());
       })
       .catch((error) => {
@@ -397,127 +376,59 @@ export default function Dashboard() {
 
     toast({
       title: "Success",
-      description: "Post deleted successfuly!",
+      description: "Post deleted successfully!",
     });
   };
 
-  // Publish post in facebook page. i have page accesstoken
-  const handlePublished = async (
-    value: any,
-    postValues: any,
-    connectedPlatforms: Array<{
-      platform: string;
-      accountId: string;
-      accessToken: string;
-    }>
+  const handleFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "image" | "video"
   ) => {
-    const platformInfo = connectedPlatforms.find(
-      (account) => account.platform === value.toLowerCase()
-    );
-    if (!platformInfo) {
-      console.error("No connected platform info found for Facebook");
-      // show toast / error
-      return;
-    }
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const pageId = platformInfo.accountId;
-    const accessToken = platformInfo.accessToken;
+    const reader = new FileReader();
 
-    if (!pageId || !accessToken) {
-      console.error("Missing pageId or accessToken");
-      // show toast / error
-      return;
-    }
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
 
-    const message = postValues.title || "";
-    const imageUrl = postValues.imageUrl; // optional
-
-    if (value === "Facebook") {
-      try {
-        let response;
-
-        if (imageUrl) {
-          // Post with image
-          // Upload a photo to the Page; message included
-          response = await axios.post(
-            `https://graph.facebook.com/${pageId}/photos`,
-            {
-              message: message,
-              url: imageUrl,
-              access_token: accessToken,
-            }
-          );
-        } else {
-          // Post with just text
-          response = await axios.post(
-            `https://graph.facebook.com/${pageId}/feed`,
-            {
-              message: message,
-              access_token: accessToken,
-            }
-          );
-        }
-
-        const data = response.data;
-        if (data && (data.id || data.post_id)) {
-          toast({
-            title: "Success",
-            description: "Post published to Facebook successfully!",
-          });
-          // Optionally: dispatch update to your backend
-        } else {
-          console.warn("Facebook API returned no post ID", data);
-          toast({
-            title: "Error",
-            description: "Failed to publish post to Facebook (no id returned).",
-            variant: "destructive",
-          });
-        }
-      } catch (error: any) {
-        console.error("Error publishing to Facebook:", error);
-        const errMsg =
-          error.response?.data?.error?.message ||
-          error.response?.data?.message ||
-          error.message ||
-          "Failed to publish post to Facebook.";
-        toast({
-          title: "Error",
-          description: errMsg,
-          variant: "destructive",
-        });
+      if (type === "image") {
+        setImagePreview(base64String); // e.g. data:image/jpeg;base64,...
+      } else if (type === "video") {
+        setVideoPreview(base64String); // e.g. data:video/mp4;base64,...
       }
-    }
+
+      console.log(`Uploaded ${type}:`, base64String);
+    };
+
+    reader.readAsDataURL(file); // Converts file → base64
   };
 
-  return (
-    <Layout>
-      <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        {platformStats.map((p) => (
-          <PlatformCard
-            key={p.name}
-            icon={p.icon}
-            platformName={p.name}
-            totalPosts={p.total}
-            importantInfo={p.info}
-            isConnected={onlyPlatforms.includes(p.name.toLowerCase())}
-            onConnect={handleConnectPlatform}
-          />
-        ))}
-      </section>
+  useEffect(() => {
+    dispatch(fetchPosts());
+  }, [dispatch]);
 
-      <section className="mb-8 ">
-        <div className="bg-gradient-to-br from-white via-pink-50 to-pink-50 w-full h-auto overflow-auto rounded-2xl shadow-sm relative  backdrop-blur-sm  border border-pink-100/50">
+  useEffect(() => {
+    if (posts.length > 0) {
+      setStep(4);
+    }
+  }, [posts]);
+
+  return (
+    <>
+      <section className="mb-8">
+        <div className="bg-gradient-to-br from-white/80 via-white/70 to-white/70 w-full h-auto overflow-auto rounded-2xl shadow-sm relative backdrop-blur-sm border border-pink-100/50">
           {/* Header */}
-          <div className=" border-b border-pink-200 px-8 py-6 rounded-t-3xl ">
+          <div className="border-b border-gray-200 px-8 py-6 rounded-t-3xl">
             <div className="flex items-center space-x-3 mb-6">
-              <Sparkles className="w-8 h-8 text-pink-500" />
-              <h3 className="text-3xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-                Generate Post Content
+              <Edit className="w-7 h-7 text-pink-500" />
+              <h3 className="text-2xl font-medium bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                Create Post
               </h3>
             </div>
 
             <div className="flex items-center gap-2 mt-4">
-              {[1, 2, 3, 4, 5].map((s) => (
+              {[1, 2, 3, 4].map((s) => (
                 <div key={s} className="flex items-center">
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
@@ -530,7 +441,7 @@ export default function Dashboard() {
                   >
                     {s < step ? "✓" : s}
                   </div>
-                  {s < 5 && (
+                  {s < 4 && (
                     <div
                       className={`w-12 h-1 mx-1 rounded ${
                         s < step
@@ -550,19 +461,19 @@ export default function Dashboard() {
             {step === 1 && (
               <div className="space-y-6 animate-fadeIn">
                 <div className="text-center mb-8">
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-2">
-                    Choose Content Type
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                    Let's Create
                   </h3>
                   <p className="text-gray-600">
-                    Select how you want to create your post
+                    Start from scratch or let AI help you craft your post.
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <button
                     onClick={() => {
                       setContentType("trending");
-                      setStep(1);
                       setCategory("");
+                      setContentTone("");
                       setMediaType([]);
                       setInputTopic("");
                     }}
@@ -573,11 +484,8 @@ export default function Dashboard() {
                     }`}
                   >
                     <div className="text-5xl mb-4">🤖</div>
-                    <h4 className="text-xl font-bold text-gray-800 mb-2">
-                      AI
-                    </h4>
                     <p className="text-gray-600">
-                      Generate content for you post using ai
+                      Generate post content instantly with AI.
                     </p>
                     {contentType === "trending" && (
                       <div className="absolute top-4 right-4 w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center">
@@ -599,8 +507,8 @@ export default function Dashboard() {
                   <button
                     onClick={() => {
                       setContentType("custom");
-                      setStep(1);
                       setCategory("");
+                      setContentTone("");
                       setMediaType([]);
                       setInputTopic("");
                     }}
@@ -611,9 +519,6 @@ export default function Dashboard() {
                     }`}
                   >
                     <div className="text-5xl mb-4">✨</div>
-                    <h4 className="text-xl font-bold text-gray-800 mb-2">
-                      Custom
-                    </h4>
                     <p className="text-gray-600">
                       Create your own unique content from scratch
                     </p>
@@ -637,300 +542,482 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Step 2: Category Selection (only for Custom) */}
-            {step === 2 && contentType === "custom" && (
-              <div className="space-y-6 animate-fadeIn">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-2">
-                    Describe Your Content
-                  </h3>
-                  <p className="text-gray-600">
-                    Tell us what you'd like to create content about
-                  </p>
-                </div>
-                <div className="w-full">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    Write your idea or post content here
-                    <span className=" text-gray-500 font-normal ml-1">
-                      -- Be as specific as possible for better content
-                      generation
-                    </span>
-                  </label>
-                  <textarea
-                    rows={6}
-                    value={inptTopic}
-                    onChange={(e) => setInputTopic(e.target.value)}
-                    placeholder="e.g. Latest AI trends in 2025, sustainable fashion tips, upcoming tech gadgets, healthy recipes for beginners..."
-                    className="w-full dark:text-gray-700 border-2 border-gray-200 rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all resize-none bg-white/70 backdrop-blur-sm"
-                  />
-                </div>
-              </div>
-            )}
+            {/* Step 2: All Configuration */}
+            {step === 2 && (
+              <div className="space-y-8 animate-fadeIn">
+                {/* Section 1: Category/Topic */}
+                <div className="space-y-4">
+                  {contentType === "custom" ? (
+                    <>
+                      <input
+                        className="8 w-full px-4 py-3 text-gray-700 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all bg-white/70 backdrop-blur-sm appearance-none cursor-pointer"
+                        type="text"
+                        placeholder="Write a catchy title for your post..."
+                        value={coustomPostTitle}
+                        onChange={(e) => setCoustomPostTitle(e.target.value)}
+                      />
 
-            {/* Step 2: Category Selection (only for trending) */}
-            {step === 2 && contentType === "trending" && (
-              <div className="space-y-6 animate-fadeIn">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-2">
-                    Select Category
-                  </h3>
-                  <p className="text-gray-600">
-                    Choose a category for trending content
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setCategory(cat.id)}
-                      className={`p-6 rounded-2xl border-2 transition-all duration-300 ${
-                        category === cat.id
-                          ? "border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50 shadow-lg scale-105"
-                          : "border-gray-200 bg-white hover:border-pink-300 hover:shadow-md"
-                      }`}
-                    >
-                      <div className="text-4xl mb-2">{cat.icon}</div>
-                      <div className="text-sm font-semibold text-gray-800">
-                        {cat.label}
+                      <textarea
+                        rows={5}
+                        value={inptTopic}
+                        onChange={(e) => setInputTopic(e.target.value)}
+                        placeholder="Describe the topic or idea for your post..."
+                        className="w-full px-4 py-3 text-gray-700 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all bg-white/70 backdrop-blur-sm appearance-none cursor-pointer"
+                      />
+
+                      <input
+                        className=" w-full px-4 py-3 text-gray-700 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all bg-white/70 backdrop-blur-sm appearance-none cursor-pointer"
+                        type="text"
+                        placeholder="Type hashtags for your post (comma separated like this #hell, #my)..."
+                        value={coustomPostHashtags}
+                        onChange={(e) => setCoustomPostHashtags(e.target.value)}
+                      />
+
+                      {/* Section 2: Media Type */}
+                      <div className="space-y-4 border p-6 rounded-xl bg-white">
+                        <div className="text-center">
+                          <p className="text-gray-600">
+                            Select the type(s) of media for your post
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Upload Image */}
+                          <label className="cursor-pointer group relative overflow-hidden p-6 rounded-xl border-2 transition-all duration-300 border-gray-200 border-dashed hover:border-purple-400 hover:shadow-md text-center bg-white">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(e, "image")}
+                            />
+                            <div className="text-4xl mb-2">🖼️</div>
+                            <p className="text-sm text-gray-700">
+                              Upload Image
+                            </p>
+                          </label>
+
+                          {/* Upload Video */}
+                          <label className="cursor-pointer group relative overflow-hidden p-6 rounded-xl border-2 transition-all duration-300 border-gray-200 border-dashed hover:border-pink-400 hover:shadow-md text-center bg-white">
+                            <input
+                              type="file"
+                              accept="video/*"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(e, "video")}
+                            />
+                            <div className="text-4xl mb-2">🎬</div>
+                            <p className="text-sm text-gray-700">
+                              Upload Video
+                            </p>
+                          </label>
+                        </div>
+
+                        {/* Preview Section */}
+                        <div className="mt-6 space-y-4">
+                          {imagePreview && (
+                            <div className="border p-3 rounded-lg max-h-[200px] max-w-[200px]">
+                              <h4 className="font-medium text-gray-700 mb-2">
+                                🖼️ Image Preview
+                              </h4>
+                              <img
+                                src={imagePreview}
+                                alt="Uploaded Preview"
+                                className="rounded-lg w-full object-cover"
+                              />
+                            </div>
+                          )}
+
+                          {videoPreview && (
+                            <div className="border p-3 rounded-lg max-h-[200px] max-w-[200px]">
+                              <h4 className="font-medium text-gray-700 mb-2">
+                                🎬 Video Preview
+                              </h4>
+                              <video
+                                src={videoPreview}
+                                controls
+                                className="rounded-lg w-full"
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </button>
-                  ))}
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-full grid grid-cols-12 gap-3">
+                        <input
+                          className="col-span-8 w-full px-4 py-3 text-gray-700 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all bg-white/70 backdrop-blur-sm appearance-none cursor-pointer"
+                          type="text"
+                          placeholder="Type a topic or idea for AI to generate content..."
+                          value={aiTopicText}
+                          onChange={(e) => setAiTopicText(e.target.value)}
+                        />
+                        <select
+                          value={category}
+                          onChange={(e) => setCategory(e.target.value)}
+                          className="col-span-4 w-full px-4 py-3 text-gray-700 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all bg-white/70 backdrop-blur-sm appearance-none cursor-pointer"
+                          style={{
+                            backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                            backgroundPosition: "right 0.5rem center",
+                            backgroundRepeat: "no-repeat",
+                            backgroundSize: "1.5em 1.5em",
+                            paddingRight: "2.5rem",
+                          }}
+                        >
+                          <option value="" disabled>
+                            Select a category...
+                          </option>
+                          {categories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.icon} {cat.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {/* Divider */}
+                      <div className="border-t border-gray-200"></div>
+
+                      <div className="grid grid-cols-2 gap-4 ">
+                        {/* Section 2: Media Type */}
+                        <div className="space-y-4 border p-6">
+                          <div className="text-center">
+                            <p className="text-gray-600">
+                              Select the type(s) of media for your post
+                            </p>
+                          </div>
+                          <div className="flex justify-center items-center gap-4">
+                            <button
+                              onClick={() => toggleMediaType("image")}
+                              className={`group relative overflow-hidden p-6 rounded-xl border-2 transition-all duration-300 ${
+                                mediaType.includes("image")
+                                  ? "border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50 shadow-md scale-105"
+                                  : "border-gray-200 bg-white hover:border-pink-300 hover:shadow-sm"
+                              }`}
+                            >
+                              <div className="text-4xl mb-2">🖼️</div>
+                              <p className="text-sm text-gray-600">
+                                Generate image
+                              </p>
+                              {mediaType.includes("image") && (
+                                <div className="absolute top-3 right-3 w-5 h-5 bg-pink-500 rounded-full flex items-center justify-center">
+                                  <svg
+                                    className="w-3 h-3 text-white"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                </div>
+                              )}
+                            </button>
+
+                            <button
+                              onClick={() => toggleMediaType("text")}
+                              className={`group relative overflow-hidden p-6 rounded-xl border-2 transition-all duration-300 ${
+                                mediaType.includes("text")
+                                  ? "border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-md scale-105"
+                                  : "border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm"
+                              }`}
+                            >
+                              <div className="text-4xl mb-2">📝</div>
+
+                              <p className="text-sm text-gray-600">
+                                Generate Texts
+                              </p>
+                              {mediaType.includes("text") && (
+                                <div className="absolute top-3 right-3 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <svg
+                                    className="w-3 h-3 text-white"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                </div>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Section 3: Content Tone */}
+                        <div className="space-y-4 border p-6">
+                          <div className="text-center">
+                            <p className="text-gray-600">
+                              Choose a tone for your content
+                            </p>
+                          </div>
+                          <div className="w-full max-w-md mx-auto">
+                            <select
+                              value={contentTone}
+                              onChange={(e) => setContentTone(e.target.value)}
+                              className="w-full px-4 py-3 text-gray-700 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all bg-white/70 backdrop-blur-sm appearance-none cursor-pointer"
+                              style={{
+                                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                                backgroundPosition: "right 0.5rem center",
+                                backgroundRepeat: "no-repeat",
+                                backgroundSize: "1.5em 1.5em",
+                                paddingRight: "2.5rem",
+                              }}
+                            >
+                              <option value="" disabled>
+                                Select a tone...
+                              </option>
+                              {ContentTone.map((tone) => (
+                                <option key={tone.id} value={tone.id}>
+                                  {tone.icon} {tone.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Step 3: Media Type Selection */}
+            {/* Step 3: Generate Post */}
             {step === 3 && (
-              <div className="space-y-6 animate-fadeIn">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-2">
-                    Choose Media Type
-                  </h3>
-                  <p className="text-gray-600">
-                    Select the type(s) of media for your post
-                  </p>
-                </div>
-                <div className="flex justify-center items-center gap-6">
-                  <button
-                    onClick={() => toggleMediaType("image")}
-                    className={`group relative overflow-hidden p-8 rounded-2xl border-2 transition-all duration-300 ${
-                      mediaType.includes("image")
-                        ? "border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50 shadow-lg scale-105"
-                        : "border-gray-200 bg-white hover:border-pink-300 hover:shadow-md"
-                    }`}
-                  >
-                    <div className="text-5xl mb-4">🖼️</div>
-                    <h4 className="text-xl font-bold text-gray-800 mb-2">
-                      Generate Image
-                    </h4>
-                    <p className="text-gray-600">
-                      Create stunning AI-generated images
-                    </p>
-                    {mediaType.includes("image") && (
-                      <div className="absolute top-4 right-4 w-6 h-6 bg-pink-500 rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-
-                  {/*<button
-                    onClick={() => toggleMediaType("video")}
-                    className={`group relative overflow-hidden p-8 rounded-2xl border-2 transition-all duration-300 ${
-                      mediaType.includes("video")
-                        ? "border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 shadow-lg scale-105"
-                        : "border-gray-200 bg-white hover:border-purple-300 hover:shadow-md"
-                    }`}
-                  >
-                    <div className="text-5xl mb-4">🎥</div>
-                    <h4 className="text-xl font-bold text-gray-800 mb-2">
-                      Generate Video
-                    </h4>
-                    <p className="text-gray-600">
-                      Create engaging AI-generated videos
-                    </p>
-                    {mediaType.includes("video") && (
-                      <div className="absolute top-4 right-4 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </button>*/}
-
-                  <button
-                    onClick={() => toggleMediaType("text")}
-                    className={`group relative overflow-hidden p-8 rounded-2xl border-2 transition-all duration-300 ${
-                      mediaType.includes("text")
-                        ? "border-blue-500 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg scale-105"
-                        : "border-gray-200 bg-white hover:border-blue-300 hover:shadow-md"
-                    }`}
-                  >
-                    <div className="text-5xl mb-4">📝</div>
-                    <h4 className="text-xl font-bold text-gray-800 mb-2">
-                      Generate Text
-                    </h4>
-                    <p className="text-gray-600">
-                      Create engaging AI-generated text content
-                    </p>
-                    {mediaType.includes("text") && (
-                      <div className="absolute top-4 right-4 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                        <svg
-                          className="w-4 h-4 text-white"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Category Selection (only for trending) */}
-            {step === 4 && (
-              <div className="space-y-6 animate-fadeIn">
-                <div className="text-center mb-8">
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-2">
-                    Select Content Tone
-                  </h3>
-                  <p className="text-gray-600">
-                    Choose a content tone
-                  </p>
-                </div>
-                <div className="grid grid-cols-8 md:grid-cols-9 gap-4">
-                  {ContentTone.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setCategory(cat.id)}
-                      className={`p-4 rounded-2xl border-2 transition-all duration-300 ${
-                        category === cat.id
-                          ? "border-pink-500 bg-gradient-to-br from-pink-50 to-purple-50 shadow-lg scale-105"
-                          : "border-gray-200 bg-white hover:border-pink-300 hover:shadow-md"
-                      }`}
-                    >
-                      <div className="text-4xl mb-2">{cat.icon}</div>
-                      <div className="text-sm font-semibold text-gray-800">
-                        {cat.label}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Step 5: Generate Post */}
-            {step === 5 && (
               <div className="space-y-6 animate-in fade-in">
                 <div className="flex justify-center items-center h-[300px]">
-                  {/* Animated border wrapper */}
                   <div className="relative group">
-                    {/* Main button */}
-                    <button className="relative p-8 ">
+                    <button className="relative p-8">
                       <div className="flex flex-col items-center justify-center space-y-3">
-                        <Sparkles className=" w-10 h-10 text-pink-400 animate-spin animation-delay-200" />
-
+                        <Sparkles className="w-10 h-10 text-pink-400 animate-spin animation-delay-200" />
                         <div className="text-center">
                           <h3 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-                            Generate Post Content
+                            Generating Post Content
                           </h3>
                           <p className="text-sm font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
                             Powered by AI
                           </p>
                         </div>
                       </div>
-
-                      {/* Shimmer effect on hover */}
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent opacity-0 group-hover:opacity-5 group-hover:animate-pulse rounded-2xl"></div>
                     </button>
                   </div>
                 </div>
               </div>
             )}
+
+            {step === 4 && (
+              <div className="text-center py-2 animate-in fade-in">
+                <div className="grid md:grid-cols-3 gap-6">
+                  {posts.map((post) => {
+                    const platform = post.platform?.toLowerCase() || "unknown";
+
+                    const platformStyles: Record<string, string> = {
+                      facebook: "border-blue-200 hover:border-blue-400",
+                      instagram: "border-pink-200 hover:border-pink-400",
+                      linkedin: "border-sky-200 hover:border-sky-400",
+                      twitter: "border-cyan-200 hover:border-cyan-400",
+                      unknown: "border-gray-200",
+                    };
+
+                    const platformAccent: Record<string, string> = {
+                      facebook: "text-blue-600",
+                      instagram: "text-pink-500",
+                      linkedin: "text-sky-600",
+                      twitter: "text-cyan-500",
+                      unknown: "text-gray-600",
+                    };
+
+                    const iconMap: Record<string, string> = {
+                      facebook: "F",
+                      instagram: "I",
+                      linkedin: "L",
+                      twitter: "X",
+                      unknown: "🌐",
+                    };
+
+                    const borderStyle = platformStyles[platform];
+                    const accent = platformAccent[platform];
+                    const icon = iconMap[platform];
+
+                    return (
+                      <div key={post._id} className="max-w-[448px] mx-auto">
+                        <div
+                          className={` relative bg-white border ${borderStyle} rounded-xl shadow-sm hover:shadow-md transition-all duration-300`}
+                        >
+                          {/* Header */}
+                          <div className="flex items-center gap-3 px-4 py-3 border-b bg-gray-50 rounded-t-xl">
+                            <div className="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm">
+                              <span className={`text-xl ${accent}`}>
+                                {icon}
+                              </span>
+                            </div>
+                            <div className="flex flex-col text-left">
+                              <p className="font-semibold capitalize text-gray-800">
+                                {post.platform}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {new Date(post.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Body */}
+                          <div className="p-4 space-y-3">
+                            {post.title && (
+                              <h1 className="text-lg font-semibold text-gray-900 text-left whitespace-pre-wrap">
+                                {post.title}
+                              </h1>
+                            )}
+                            {post.body && (
+                              <p className="text-gray-800 text-sm text-left whitespace-pre-wrap">
+                                {post.body && post.body.length > 30
+                                  ? post.body.slice(0, 100) + "..."
+                                  : post.body}
+                              </p>
+                            )}
+
+                            {post.hashtags && post.hashtags.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {post.hashtags.map((tag, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full"
+                                  >
+                                    #{tag.replace("#", "")}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {post.imageUrl && (
+                              <div className="mt-2 overflow-hidden rounded-lg max-h-64">
+                                <img
+                                  src={post.imageUrl}
+                                  alt="Post content"
+                                  className="w-full object-cover transition-transform duration-300 hover:scale-[1.02]"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Footer Actions */}
+                          <div className="flex justify-end px-4 py-2 border-t text-sm text-gray-500 bg-gray-50 rounded-b-xl">
+                            <div className="flex gap-3">
+                              <button className="px-4 py-1.5 text-sm font-medium hover:bg-pink-200 border border-pink-400  rounded-full text-pink-400 hover:scale-105 transition-all">
+                                Published
+                              </button>
+
+                              <button
+                                onClick={() => handleView(post)}
+                                className="px-4 py-1.5 text-sm font-medium hover:bg-pink-200 border border-pink-400  rounded-full text-pink-400 hover:scale-105 transition-all"
+                              >
+                                Edit
+                              </button>
+
+                              <button
+                                className="px-4 py-1.5 text-sm font-medium hover:bg-pink-200 border border-pink-400  rounded-full text-pink-400 hover:scale-105 transition-all"
+                                onClick={() => handleDelete(post)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {posts.length === 0 && (
+                  <div className="text-center py-12">
+                    <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-pink-100 to-purple-100 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-10 h-10 text-purple-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-gray-500 font-medium">
+                      No posts generated yet
+                    </p>
+                    <p className="text-gray-400 text-sm mt-1">
+                      Create your first post to get started
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Footer */}
-          <div className="sticky bottom-0 bg-white/80 backdrop-blur-md border-t border-pink-200 px-8 py-6 rounded-b-3xl flex justify-between items-center">
-            {step > 1 && step <= 4 && (
-              <button
-                onClick={() => {
-                  if (step === 3 && contentType === "custom") {
-                    setStep(1);
-                  } else {
-                    setStep(step - 1);
-                  }
-                }}
-                className="px-6 py-3 rounded-xl font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                ← Back
-              </button>
-            )}
-            {step === 1 && <div />}
-
-            <div className="flex gap-3">
-              {step < 4 ? (
-                // Step 1-2: Continue button
+          {step !== 3 && (
+            <div
+              className={`sticky bottom-0 bg-white/80 backdrop-blur-md border-t border-gray-200 px-8 py-6 rounded-b-3xl flex  ${
+                step === 4 ? "justify-end" : "justify-between items-center"
+              }`}
+            >
+              {step > 1 && step < 4 && (
                 <button
-                  onClick={handleNext}
-                  disabled={!canProceed()}
-                  className={`px-8 py-3 rounded-xl font-semibold transition-all ${
-                    canProceed()
-                      ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:shadow-lg hover:scale-105"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  }`}
-                >
-                  Continue →
-                </button>
-              ) : step === 4 ? (
-                // Step 3: Generate button
-                <button
-                  onClick={() => {
-                    handleNext();
-                    handleGenerate();
-                  }}
-                  disabled={!canProceed()}
-                  className={`px-8 py-3 rounded-xl font-semibold transition-all ${
-                    canProceed()
-                      ? "bg-gradient-to-r from-green-500 to-teal-500 text-white hover:shadow-lg hover:scale-105"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  }`}
-                >
-                  Generate
-                </button>
-              ) : (
-                // Step 4+: Cancel button
-                <button
-                  onClick={handleReset}
+                  onClick={() => setStep(step - 1)}
                   className="px-6 py-3 rounded-xl font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
                 >
-                  Cancel
+                  ← Back
                 </button>
               )}
+              {step === 1 && <div />}
+
+              <div className={`flex gap-3`}>
+                {step < 2 ? (
+                  <button
+                    onClick={handleNext}
+                    disabled={!canProceed()}
+                    className={`px-8 py-3 rounded-xl font-semibold transition-all ${
+                      canProceed()
+                        ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:shadow-lg hover:scale-105"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    Continue →
+                  </button>
+                ) : step === 2 ? (
+                  <button
+                    onClick={() => {
+                      handleNext();
+                      handleGenerate();
+                    }}
+                    disabled={!canProceed()}
+                    className={`px-8 py-3 rounded-xl font-semibold transition-all ${
+                      canProceed()
+                        ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:shadow-lg hover:scale-105"
+                        : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
+                  >
+                    Generate
+                  </button>
+                ) : (
+                  step === 4 && (
+                    <button
+                      onClick={handleReset}
+                      className="px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:shadow-lg hover:scale-105"
+                    >
+                      Create New
+                    </button>
+                  )
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <style jsx>{`
@@ -950,7 +1037,7 @@ export default function Dashboard() {
         `}</style>
       </section>
 
-      <section className="backdrop-blur-xl bg-white/70 shadow-lg rounded-2xl p-8 border border-pink-100/50">
+      {/* <section className="backdrop-blur-xl bg-white/70 shadow-lg rounded-2xl p-8 border border-pink-100/50">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
             Generated Posts
@@ -966,13 +1053,11 @@ export default function Dashboard() {
               key={post._id}
               className="group relative backdrop-blur-sm bg-white/80 border border-pink-100 rounded-xl p-5 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 hover:border-pink-300"
             >
-              {/* Gradient accent bar */}
               <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-pink-500 to-purple-600 rounded-l-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
               <div className="flex justify-between items-center gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-2">
-                    {/* Platform badge */}
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-pink-100 to-purple-100 text-purple-700 border border-pink-200">
                       {post?.platform}
                     </span>
@@ -1007,17 +1092,12 @@ export default function Dashboard() {
                   View
                 </button>
                 <button
-                  className="px-5 py-2.5 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium rounded-md hover:scale-105 transition-all duration-200 whitespace-nowrap"
+                  className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white font-medium rounded-md hover:scale-105 transition-all duration-200 whitespace-nowrap"
                   onClick={() => handleDelete(post)}
                 >
                   Delete
                 </button>
-                <button
-                  className="px-5 py-2.5 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-medium rounded-md hover:scale-105 transition-all duration-200 whitespace-nowrap"
-                  onClick={() =>
-                    handlePublished(post.platform, post, connectedPlatforms)
-                  }
-                >
+                <button className="px-5 py-2.5 bg-gradient-to-r from-green-500 to-green-600 text-white font-medium rounded-md hover:scale-105 transition-all duration-200 whitespace-nowrap">
                   Published
                 </button>
               </div>
@@ -1048,13 +1128,13 @@ export default function Dashboard() {
             </p>
           </div>
         )}
-      </section>
+      </section> */}
 
       <GeneratedPostModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         post={selectedPost}
       />
-    </Layout>
+    </>
   );
 }

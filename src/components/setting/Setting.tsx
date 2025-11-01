@@ -114,20 +114,6 @@ export default function Settings() {
     // add as needed
   ];
 
-  
-
-
-
-
-
- 
-
-
-
-
-
- 
-
   return (
     <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
       {platformStats.map((p) => (

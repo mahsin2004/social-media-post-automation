@@ -1,12 +1,12 @@
-'use client';
+import Dashboard from "@/components/dashboard/Dashboard";
 
-import DashboardLayout from '@/components/dashboard/Dashboard';
-import { ProtectedRoute } from '@/components/auth/protected-route';
 
-export default function Dashboard() {
-  return (
-    <ProtectedRoute>
-      <DashboardLayout />
-    </ProtectedRoute>
-  );
-}
+const page = () => {
+    return (
+        <>
+            <Dashboard />
+        </>
+    );
+};
+
+export default page;
