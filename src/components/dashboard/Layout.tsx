@@ -19,6 +19,7 @@ import {
   Bell,
   FileText,
   Home,
+  NotebookText,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -31,18 +32,18 @@ export default function Layout({ children }: PropsWithChildren) {
   const pathname = usePathname();
 
   const menuItems = [
+    // {
+    //   id: "analytics",
+    //   path: "/dashboard/analytics",
+    //   icon: TrendingUp,
+    //   label: "Analytics",
+    //   color: "from-purple-400 to-purple-500",
+    // },
     {
-      id: "analytics",
-      path: "/dashboard/analytics",
-      icon: TrendingUp,
-      label: "Analytics",
-      color: "from-purple-400 to-purple-500",
-    },
-    {
-      id: "calendar",
-      path: "/dashboard/calendar",
-      icon: Calendar,
-      label: "Calendar",
+      id: "Planning",
+      path: "/dashboard/planning",
+      icon: NotebookText,
+      label: "Planning",
       color: "from-purple-400 to-purple-500",
     },
     {
