@@ -1,4 +1,5 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createEntityAdapter, EntityState } from '@reduxjs/toolkit';
+import type { RootState } from '../../index';
 import axios from 'axios';
 import { getAuthToken } from '@/lib/cookies';
 
@@ -19,21 +20,41 @@ interface Post {
   updatedAt: string;
 }
 
-interface PostsState {
-  posts: Post[];
+const postsAdapter = createEntityAdapter<Post, string>({
+  selectId: (post) => post._id,
+  sortComparer: (a, b) => b.createdAt.localeCompare(a.createdAt),
+});
+
+export const {
+  selectAll: selectAllPosts,
+  selectById: selectPostById,
+} = postsAdapter.getSelectors((state: RootState) => state.posts as EntityState<Post, string>);
+
+interface PostsState extends EntityState<Post, string> {
   isLoading: boolean;
   error: string | null;
+  lastFetched: number | null;
 }
 
-const initialState: PostsState = {
-  posts: [],
+const initialState: PostsState = postsAdapter.getInitialState({
   isLoading: false,
   error: null,
-};
+  lastFetched: null,
+});
 
 export const fetchPosts = createAsyncThunk(
   'posts/fetchPosts',
-  async (_, { rejectWithValue }) => {
+  async (arg: { forceRefetch?: boolean } = {}, { getState, rejectWithValue }) => {
+    const state = getState() as RootState;
+    const { lastFetched, isLoading } = state.posts;
+
+    const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const now = Date.now();
+
+    if (!arg.forceRefetch && lastFetched && (now - lastFetched < fiveMinutes || isLoading)) {
+      return rejectWithValue('Posts already fetched recently.');
+    }
+
     try {
       const token = getAuthToken();
       const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts`, {
@@ -41,7 +62,6 @@ export const fetchPosts = createAsyncThunk(
           Authorization: `Bearer ${token}`,
         },
       });
-      // console.log('Post list', response.data)
       return response.data;
     } catch (error: any) {
       return rejectWithValue(error.response.data.message || error.message);
@@ -111,7 +131,8 @@ const postsSlice = createSlice({
       })
       .addCase(fetchPosts.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.posts = action.payload;
+        postsAdapter.setAll(state, action.payload);
+        state.lastFetched = Date.now();
       })
       .addCase(fetchPosts.rejected, (state, action) => {
         state.isLoading = false;
@@ -123,14 +144,14 @@ const postsSlice = createSlice({
       })
       .addCase(updatePost.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.posts.findIndex(post => post._id === action.payload._id);
-        if (index !== -1) {
-          state.posts[index] = action.payload;
-        }
+        postsAdapter.upsertOne(state, action.payload);
       })
       .addCase(updatePost.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      .addCase(deletePost.fulfilled, (state, action) => {
+        postsAdapter.removeOne(state, action.meta.arg.postId);
       });
   },
 });

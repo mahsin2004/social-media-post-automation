@@ -11,12 +11,13 @@ import { useToast } from "@/hooks/use-toast";
 import { getAuthToken } from "@/lib/cookies";
 import { useAuth } from "@/contexts/auth-context";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { deletePost, fetchPosts } from "@/store/features/posts/postsSlice";
+import { deletePost, fetchPosts, selectAllPosts } from "@/store/features/posts/postsSlice";
 import { set } from "date-fns";
 
 export default function Dashboard() {
   const dispatch = useAppDispatch();
-  const { posts, isLoading, error } = useAppSelector((state) => state.posts);
+  const posts = useAppSelector(selectAllPosts);
+  const { isLoading, error } = useAppSelector((state) => state.posts);
   const { toast } = useToast();
   const { user } = useAuth();
   const router = useRouter();
@@ -215,7 +216,7 @@ export default function Dashboard() {
         // console.log("post created", resPost.data);
 
         if (resPost.status === 201) {
-          dispatch(fetchPosts());
+          dispatch(fetchPosts({ forceRefetch: true }));
           handleReset();
           setStep(4);
 
@@ -332,7 +333,7 @@ export default function Dashboard() {
         // console.log("post created", resPost.data);
 
         if (resPost.status === 201) {
-          dispatch(fetchPosts());
+          dispatch(fetchPosts({ forceRefetch: true }));
           handleReset();
           setStep(4);
 
@@ -368,7 +369,7 @@ export default function Dashboard() {
     dispatch(deletePost({ postId: post._id, token }))
       .unwrap()
       .then(() => {
-        dispatch(fetchPosts());
+        dispatch(fetchPosts({ forceRefetch: true }));
       })
       .catch((error) => {
         console.error("Failed to update post:", error);
@@ -405,7 +406,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    dispatch(fetchPosts());
+    dispatch(fetchPosts({}));
   }, [dispatch]);
 
   useEffect(() => {
@@ -549,13 +550,13 @@ export default function Dashboard() {
                 <div className="space-y-4">
                   {contentType === "custom" ? (
                     <>
-                      <input
+                      {/* <input
                         className="8 w-full px-4 py-3 text-gray-700 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all bg-white/70 backdrop-blur-sm appearance-none cursor-pointer"
                         type="text"
                         placeholder="Write a catchy title for your post..."
                         value={coustomPostTitle}
                         onChange={(e) => setCoustomPostTitle(e.target.value)}
-                      />
+                      /> */}
 
                       <textarea
                         rows={5}
@@ -565,13 +566,13 @@ export default function Dashboard() {
                         className="w-full px-4 py-3 text-gray-700 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all bg-white/70 backdrop-blur-sm appearance-none cursor-pointer"
                       />
 
-                      <input
+                      {/* <input
                         className=" w-full px-4 py-3 text-gray-700 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all bg-white/70 backdrop-blur-sm appearance-none cursor-pointer"
                         type="text"
                         placeholder="Type hashtags for your post (comma separated like this #hell, #my)..."
                         value={coustomPostHashtags}
                         onChange={(e) => setCoustomPostHashtags(e.target.value)}
-                      />
+                      /> */}
 
                       {/* Section 2: Media Type */}
                       <div className="space-y-4 border p-6 rounded-xl bg-white">
@@ -1011,7 +1012,7 @@ export default function Dashboard() {
                       onClick={handleReset}
                       className="px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:shadow-lg hover:scale-105"
                     >
-                      Create New
+                      Create New Post
                     </button>
                   )
                 )}

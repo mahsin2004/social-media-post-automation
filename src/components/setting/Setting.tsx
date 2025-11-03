@@ -8,11 +8,13 @@ import { getAuthToken } from "@/lib/cookies";
 import { useAuth } from "@/contexts/auth-context";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchPosts } from "@/store/features/posts/postsSlice";
+import { selectAllPosts } from "@/store/features/posts/postsSlice";
 import PlatformCard from "../dashboard/PlatformCard";
 
 export default function Settings() {
   const dispatch = useAppDispatch();
-  const { posts, isLoading, error } = useAppSelector((state) => state.posts);
+  const posts = useAppSelector(selectAllPosts);
+  const { isLoading, error } = useAppSelector((state) => state.posts);
   // console.log("Post list:", posts);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -21,7 +23,7 @@ export default function Settings() {
   const [onlyPlatforms, setOnlyPlatforms] = useState<string[]>([]);
 
   useEffect(() => {
-    dispatch(fetchPosts());
+    dispatch(fetchPosts({}));
     const fetchConnectedPlatforms = async () => {
       const token = getAuthToken();
       // console.log('base url--->', process.env.NEXT_PUBLIC_BACKEND_URL)

@@ -9,6 +9,14 @@ import {
   Download,
   RefreshCw,
 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useAppDispatch } from "@/store/hooks";
+import { getAuthToken } from "@/lib/cookies";
+import { useAuth } from "@/contexts/auth-context";
+import axios from "axios";
+import { fetchPosts } from "@/store/features/posts/postsSlice";
+import { redirect } from "next/dist/server/api-utils";
+import { useRouter } from "next/navigation";
 
 export default function Planning() {
   const [content, setContent] = useState("");
@@ -19,6 +27,9 @@ export default function Planning() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [contentTone, setContentTone] = useState<string>("");
+  const dispatch = useAppDispatch();
+  const { user } = useAuth();
+  const router = useRouter();
 
   const platforms = [
     { id: "twitter", name: "Twitter/X", limit: 280 },
@@ -95,6 +106,96 @@ export default function Planning() {
   const charCount = content.length;
   const percentage = (charCount / (currentPlatform?.limit ?? 280)) * 100;
 
+  const handleGenerate = async () => {
+    try {
+      let topicText = "";
+      ;
+      const token = getAuthToken();
+      if (!user || !token || !content) {
+        toast({
+          title: "Error",
+          description: "You must be signed in to generate content.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+
+      topicText = '';
+      const customoDataPost = [
+        {
+          title: '',
+          body: content,
+          hashtags: '',
+          imageUrl: '',
+          videoUrl: '',
+          platform: "Facebook",
+          caption: null,
+          description: null,
+        },
+        {
+          title: '',
+          body: content,
+          imageUrl: imagePreview,
+          videoUrl: '',
+          platform: "Instagram",
+          caption: null,
+          description: null,
+        },
+        {
+          title: '',
+          body: content,
+          imageUrl: imagePreview,
+          videoUrl: '',
+          platform: "Twitter",
+          caption: null,
+          description: null,
+        },
+        {
+          title: '',
+          body: content,
+          imageUrl: imagePreview,
+          videoUrl: '',
+          platform: "LinkedIn",
+          caption: null,
+          description: null,
+        },
+      ];
+
+      const resPost = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/posts`,
+        { posts: customoDataPost },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // console.log("post created", resPost.data);
+
+      if (resPost.status === 201) {
+        dispatch(fetchPosts({ forceRefetch: true }));
+        router.push('/dashboard');
+        toast({
+          title: "Success",
+          description: "Content generated successfully!",
+        });
+      }
+
+
+
+
+    } catch (error) {
+      console.error("Error generating content:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate content.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-pink-50 to-pink-100 p-4">
       <div className="">
@@ -124,11 +225,10 @@ export default function Planning() {
                   <button
                     key={p.id}
                     onClick={() => setPlatform(p.id)}
-                    className={`px-4 py-3 rounded-xl font-medium transition-all ${
-                      platform === p.id
-                        ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                    className={`px-4 py-3 rounded-xl font-medium transition-all ${platform === p.id
+                      ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
                   >
                     {p.name}
                   </button>
@@ -145,9 +245,8 @@ export default function Planning() {
                 </label>
                 <div className="flex items-center gap-2 text-sm">
                   <span
-                    className={`font-medium ${
-                      percentage > 90 ? "text-red-500" : "text-gray-600"
-                    }`}
+                    className={`font-medium ${percentage > 90 ? "text-red-500" : "text-gray-600"
+                      }`}
                   >
                     {charCount} / {currentPlatform?.limit ?? 280}
                   </span>
@@ -164,19 +263,25 @@ export default function Planning() {
               {/* Progress Bar */}
               <div className="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
-                  className={`h-full transition-all ${
-                    percentage > 90
-                      ? "bg-red-500"
-                      : percentage > 70
+                  className={`h-full transition-all ${percentage > 90
+                    ? "bg-red-500"
+                    : percentage > 70
                       ? "bg-yellow-500"
                       : "bg-gradient-to-r from-pink-500 to-rose-500"
-                  }`}
+                    }`}
                   style={{ width: `${Math.min(percentage, 100)}%` }}
                 />
               </div>
 
               {/* Action Buttons */}
               <div className="flex gap-3 mt-4">
+                <button
+                  onClick={() => handleGenerate()}
+
+                  className={`bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-3 rounded-xl font-semibold transition-all hover:shadow-lg`}
+                >
+                  Generate
+                </button>
                 <button
                   onClick={enhanceWithAI}
                   disabled={!content || isGenerating}
@@ -284,9 +389,8 @@ export default function Planning() {
                   className="p-2 hover:bg-pink-50 rounded-lg transition-all"
                 >
                   <RefreshCw
-                    className={`w-4 h-4 text-gray-600 ${
-                      isGenerating ? "animate-spin" : ""
-                    }`}
+                    className={`w-4 h-4 text-gray-600 ${isGenerating ? "animate-spin" : ""
+                      }`}
                   />
                 </button>
               </div>
