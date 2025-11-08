@@ -5,13 +5,17 @@ import { useRouter } from "next/navigation";
 import Layout from "./Layout";
 import PlatformCard from "./PlatformCard";
 import GeneratedPostModal from "./GeneratedPostModal";
-import { Edit, Sparkles } from "lucide-react";
+import { Edit, Sparkles, Wand2 } from "lucide-react";
 import axios from "axios";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthToken } from "@/lib/cookies";
 import { useAuth } from "@/contexts/auth-context";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { deletePost, fetchPosts, selectAllPosts } from "@/store/features/posts/postsSlice";
+import {
+  deletePost,
+  fetchPosts,
+  selectAllPosts,
+} from "@/store/features/posts/postsSlice";
 import { set } from "date-fns";
 
 export default function Dashboard() {
@@ -557,7 +561,14 @@ export default function Dashboard() {
                         value={coustomPostTitle}
                         onChange={(e) => setCoustomPostTitle(e.target.value)}
                       /> */}
-
+                      <div className="flex justify-end">
+                        <div>
+                          <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-medium hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                            <Wand2 className="w-4 h-4" />
+                            Enhance with AI
+                          </button>
+                        </div>
+                      </div>
                       <textarea
                         rows={5}
                         value={inptTopic}
@@ -811,6 +822,11 @@ export default function Dashboard() {
 
             {step === 4 && (
               <div className="text-center py-2 animate-in fade-in">
+                <div className="flex justify-end">
+                  <button className="px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:shadow-lg hover:scale-105">
+                    Publish All
+                  </button>
+                </div>
                 <div className="grid md:grid-cols-3 gap-6">
                   {posts.map((post) => {
                     const platform = post.platform?.toLowerCase() || "unknown";
@@ -908,7 +924,7 @@ export default function Dashboard() {
                           <div className="flex justify-end px-4 py-2 border-t text-sm text-gray-500 bg-gray-50 rounded-b-xl">
                             <div className="flex gap-3">
                               <button className="px-4 py-1.5 text-sm font-medium hover:bg-pink-200 border border-pink-400  rounded-full text-pink-400 hover:scale-105 transition-all">
-                                Published
+                                Publish
                               </button>
 
                               <button

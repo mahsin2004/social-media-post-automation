@@ -48,7 +48,11 @@ function inferMimeFromBase64(base64: string, preferImage = true): string {
   return preferImage ? "image/jpeg" : "video/mp4";
 }
 
-function toDataUriFromBase64(base64: string, mime?: string, preferImage = true) {
+function toDataUriFromBase64(
+  base64: string,
+  mime?: string,
+  preferImage = true
+) {
   const m = mime ?? inferMimeFromBase64(base64, preferImage);
   return `data:${m};base64,${base64}`;
 }
@@ -82,8 +86,12 @@ export default function GeneratedPostModal({
   const [description, setDescription] = useState(post?.description ?? "");
   const [body, setBody] = useState(post?.body ?? "");
   const [hashtags, setHashtags] = useState(post?.hashtags?.join(" ") ?? "");
-  const [imageUrl, setImageUrl] = useState<string | null>(post?.imageUrl ?? null);
-  const [videoUrl, setVideoUrl] = useState<string | null>(post?.videoUrl ?? null);
+  const [imageUrl, setImageUrl] = useState<string | null>(
+    post?.imageUrl ?? null
+  );
+  const [videoUrl, setVideoUrl] = useState<string | null>(
+    post?.videoUrl ?? null
+  );
   const [caption, setCaption] = useState(post?.caption ?? "");
 
   // For local file selection & preview
@@ -235,7 +243,12 @@ export default function GeneratedPostModal({
         // fallback: convert file to base64 data URI and use that
         try {
           const base64Payload = await fileToBase64(selectedFile); // returns base64 payload
-          const mime = selectedFile.type || inferMimeFromBase64(base64Payload, !selectedFile.type.startsWith("video/"));
+          const mime =
+            selectedFile.type ||
+            inferMimeFromBase64(
+              base64Payload,
+              !selectedFile.type.startsWith("video/")
+            );
           const dataUri = `data:${mime};base64,${base64Payload}`;
           if (selectedFile.type.startsWith("video/")) {
             finalVideoUrl = dataUri;
@@ -252,10 +265,18 @@ export default function GeneratedPostModal({
 
     // If user manually pasted a base64 payload into imageUrl/videoUrl input,
     // ensure we prepend a data: prefix if necessary before saving.
-    if (finalImageUrl && !finalImageUrl.startsWith("data:") && looksLikeBase64(finalImageUrl)) {
+    if (
+      finalImageUrl &&
+      !finalImageUrl.startsWith("data:") &&
+      looksLikeBase64(finalImageUrl)
+    ) {
       finalImageUrl = toDataUriFromBase64(finalImageUrl, undefined, true);
     }
-    if (finalVideoUrl && !finalVideoUrl.startsWith("data:") && looksLikeBase64(finalVideoUrl)) {
+    if (
+      finalVideoUrl &&
+      !finalVideoUrl.startsWith("data:") &&
+      looksLikeBase64(finalVideoUrl)
+    ) {
       finalVideoUrl = toDataUriFromBase64(finalVideoUrl, undefined, false);
     }
 
@@ -320,7 +341,7 @@ export default function GeneratedPostModal({
               </div>
               <div className="group flex items-center justify-center gap-2 ml-8 border border-pink-300 cursor-pointer rounded-full px-4 py-1 hover:bg-pink-300 hover:text-white">
                 <h2 className="text-xl text-pink-400 font-bold group-hover:text-white">
-                  HUMANIZE AI
+                  Enhance with AI
                 </h2>
                 <Sparkles className="w-6 h-6 text-pink-400 animate-spin animation-delay-200 group-hover:text-white" />
               </div>
@@ -336,7 +357,12 @@ export default function GeneratedPostModal({
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -354,7 +380,12 @@ export default function GeneratedPostModal({
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                  />
                 </svg>
                 Title
               </label>
@@ -376,7 +407,12 @@ export default function GeneratedPostModal({
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
                 </svg>
                 Body
               </label>
@@ -398,7 +434,12 @@ export default function GeneratedPostModal({
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
+                  />
                 </svg>
                 Hashtags
               </label>
@@ -420,7 +461,12 @@ export default function GeneratedPostModal({
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
                 Media (Image or Video)
               </label>
@@ -476,7 +522,12 @@ export default function GeneratedPostModal({
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10a2 2 0 002 2h12a2 2 0 002-2V7M16 3l-4 4-4-4" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 7v10a2 2 0 002 2h12a2 2 0 002-2V7M16 3l-4 4-4-4"
+                    />
                   </svg>
                   Upload file
                 </label>
@@ -535,7 +586,12 @@ export default function GeneratedPostModal({
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
               Save
             </button>
